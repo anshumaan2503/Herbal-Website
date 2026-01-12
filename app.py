@@ -16,7 +16,14 @@ COLLECTION_NAME = os.environ.get('COLLECTION_NAME', "herbaluser")
 
 # Initialize MongoDB connection
 try:
-    client = MongoClient(MONGO_URI)
+    # Add SSL configuration for compatibility with Python 3.13
+    import ssl
+    client = MongoClient(
+        MONGO_URI,
+        tls=True,
+        tlsAllowInvalidCertificates=True,
+        serverSelectionTimeoutMS=5000
+    )
     # Test the connection
     client.admin.command('ping')
     db = client[DB_NAME]
