@@ -6,13 +6,5 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.9
       - key: SECRET_KEY
-        sync: false
-      - key: MONGO_URI
-        sync: false
-      - key: DB_NAME
-        sync: false
-      - key: COLLECTION_NAME
         sync: false

@@ -1,40 +1,13 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-from pymongo import MongoClient
+import sqlite3
 import os
 from werkzeug.utils import secure_filename
-from bson import ObjectId
 from urllib.parse import quote
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/images'
-app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key')  # Use environment variable
-
-# MongoDB Configuration
-MONGO_URI = os.environ.get('MONGO_URI')
-DB_NAME = os.environ.get('DB_NAME', "herbaluser")
-COLLECTION_NAME = os.environ.get('COLLECTION_NAME', "herbaluser")
-
-# Initialize MongoDB connection
-try:
-    # Add SSL configuration for compatibility with Python 3.13
-    import ssl
-    client = MongoClient(
-        MONGO_URI,
-        tls=True,
-        tlsAllowInvalidCertificates=True,
-        serverSelectionTimeoutMS=5000
-    )
-    # Test the connection
-    client.admin.command('ping')
-    db = client[DB_NAME]
-    products_collection = db[COLLECTION_NAME]
-    print("✅ MongoDB connected successfully!")
-except Exception as e:
-    print(f"❌ MongoDB connection failed: {e}")
-    print("Please make sure MongoDB is running on localhost:27017")
-    client = None
-    db = None
-    products_collection = None
+app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key')
+app.config['DATABASE'] = 'products.db'
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -43,24 +16,38 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 def urlencode_filter(s):
     return quote(str(s))
 
-def init_db():
-    if products_collection is not None:
-        # Create indexes for better performance
-        products_collection.create_index("name")
-        print("MongoDB database initialized successfully!")
-    else:
-        print("❌ Cannot initialize database - MongoDB not connected")
+# Database helper functions
+def get_db():
+    """Get database connection"""
+    db = sqlite3.connect(app.config['DATABASE'])
+    db.row_factory = sqlite3.Row  # Return rows as dictionaries
+    return db
 
+def init_db():
+    """Initialize the database"""
+    db = get_db()
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT NOT NULL,
+            price TEXT NOT NULL,
+            image TEXT NOT NULL
+        )
+    ''')
+    db.commit()
+    db.close()
+    print("✅ SQLite database initialized successfully!")
+
+# Initialize database on startup
 init_db()
 
 # ✅ Home page - Show all products
 @app.route('/')
 def home():
-    if products_collection is not None:
-        products = list(products_collection.find())
-    else:
-        products = []
-        flash('Database connection error. Please try again later.', 'error')
+    db = get_db()
+    products = db.execute('SELECT * FROM products').fetchall()
+    db.close()
     return render_template('index.html', products=products)
 
 # Admin login page
@@ -88,11 +75,9 @@ def logout():
 def dashboard():
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
-    if products_collection is not None:
-        products = list(products_collection.find())
-    else:
-        products = []
-        flash('Database connection error. Please try again later.', 'error')
+    db = get_db()
+    products = db.execute('SELECT * FROM products').fetchall()
+    db.close()
     return render_template('dashboard.html', products=products)
 
 # Protect add-product route
@@ -111,48 +96,44 @@ def add_product():
             image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
             image.save(image_path)
 
-            # Insert product into MongoDB
-            if products_collection is not None:
-                product_data = {
-                    'name': name,
-                    'description': description,
-                    'price': price,
-                    'image': image_filename
-                }
-                products_collection.insert_one(product_data)
-                flash('Product added successfully!', 'success')
-            else:
-                flash('Database connection error. Product not saved.', 'error')
+            # Insert product into SQLite
+            db = get_db()
+            db.execute(
+                'INSERT INTO products (name, description, price, image) VALUES (?, ?, ?, ?)',
+                (name, description, price, image_filename)
+            )
+            db.commit()
+            db.close()
+            flash('Product added successfully!', 'success')
 
         return redirect(url_for('dashboard'))
 
     return render_template('add_product.html')
 
 # Protect delete route
-@app.route('/delete/<product_id>')
+@app.route('/delete/<int:product_id>')
 def delete_product(product_id):
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
     
     try:
-        if products_collection is not None:
-            # Convert string ID to ObjectId
-            product_object_id = ObjectId(product_id)
+        db = get_db()
+        # Fetch product to get image filename
+        product = db.execute('SELECT * FROM products WHERE id = ?', (product_id,)).fetchone()
+        
+        if product:
+            # Delete from database
+            db.execute('DELETE FROM products WHERE id = ?', (product_id,))
+            db.commit()
             
-            # Fetch image filename before deletion
-            product = products_collection.find_one({'_id': product_object_id})
-            
-            if product:
-                # Delete from database
-                products_collection.delete_one({'_id': product_object_id})
-                
-                # Delete image file from disk
-                if product.get('image'):
-                    image_path = os.path.join(app.config['UPLOAD_FOLDER'], product['image'])
-                    if os.path.exists(image_path):
-                        os.remove(image_path)
-        else:
-            flash('Database connection error. Product not deleted.', 'error')
+            # Delete image file from disk
+            if product['image']:
+                image_path = os.path.join(app.config['UPLOAD_FOLDER'], product['image'])
+                if os.path.exists(image_path):
+                    os.remove(image_path)
+        
+        db.close()
+        flash('Product deleted successfully!', 'success')
         
     except Exception as e:
         print(f"Error deleting product: {e}")
