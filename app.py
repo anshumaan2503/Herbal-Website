@@ -7,12 +7,12 @@ from urllib.parse import quote
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/images'
-app.secret_key = 'your_secret_key'  # Add a secret key for sessions
+app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key')  # Use environment variable
 
 # MongoDB Configuration
-MONGO_URI = "mongodb://localhost:27017/"
-DB_NAME = "Herbal_Website"
-COLLECTION_NAME = "Herbal"
+MONGO_URI = os.environ.get('MONGO_URI')
+DB_NAME = os.environ.get('DB_NAME', "herbaluser")
+COLLECTION_NAME = os.environ.get('COLLECTION_NAME', "herbaluser")
 
 # Initialize MongoDB connection
 try:
@@ -159,4 +159,5 @@ def admin():
     return redirect(url_for('admin_login'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
