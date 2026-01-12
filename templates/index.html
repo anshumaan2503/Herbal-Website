@@ -1,23 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Herbal Products</title>
-    
+
     <!-- CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='beautiful.css') }}">
-    
+
     <!-- Fonts & Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:wght@600;700&display=swap"
+        rel="stylesheet">
+
     <!-- GSAP CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollToPlugin.min.js"></script>
 </head>
+
 <body>
     <!-- Header -->
     <header class="header" id="header">
@@ -43,7 +47,8 @@
         <div class="hero-content">
             <div class="hero-text" id="hero-text">
                 <h1 class="hero-title" id="hero-title">Natural & Healthy Living</h1>
-                <p class="hero-subtitle" id="hero-subtitle">Discover herbal products that enhance your lifestyle naturally.</p>
+                <p class="hero-subtitle" id="hero-subtitle">Discover herbal products that enhance your lifestyle
+                    naturally.</p>
                 <a href="#products" class="btn hero-btn" id="hero-btn">Shop Now</a>
             </div>
             <div class="hero-visual" id="hero-visual">
@@ -63,29 +68,31 @@
             <h2 class="section-title" id="products-title">Our Products</h2>
             <div class="product-grid" id="product-grid">
                 {% if products %}
-                    {% for product in products %}
-                        <div class="product-card" data-product-id="{{ product._id }}">
-                            <div class="product-image-container">
-                                <img src="{{ url_for('static', filename='images/' + product.image) }}" alt="{{ product.name }}" class="product-image">
-                                <div class="product-overlay">
-                                    <i class="fa-solid fa-eye"></i>
-                                </div>
-                            </div>
-                            <div class="product-info">
-                                <h3 class="product-name">{{ product.name }}</h3>
-                                <p class="product-description">{{ product.description }}</p>
-                                <p class="product-price"><strong>₹{{ product.price }}</strong></p>
-
-                                <!--whatsapp link-->
-                                <a href="https://wa.me/YOURNUMBERHERE?text=Hello!%20I%20would%20like%20to%20buy%20{{ product.name|urlencode }}%20for%20₹{{ product.price }}.%20Please%20let%20me%20know%20the%20availability." class="btn product-btn">Buy Now</a>
-                            </div>
+                {% for product in products %}
+                <div class="product-card" data-product-id="{{ product.id }}">
+                    <div class="product-image-container">
+                        <img src="{{ url_for('static', filename='images/' + product.image) }}" alt="{{ product.name }}"
+                            class="product-image">
+                        <div class="product-overlay">
+                            <i class="fa-solid fa-eye"></i>
                         </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="no-products">
-                        <i class="fa-solid fa-seedling"></i>
-                        <p>No products found. Please add some!</p>
                     </div>
+                    <div class="product-info">
+                        <h3 class="product-name">{{ product.name }}</h3>
+                        <p class="product-description">{{ product.description }}</p>
+                        <p class="product-price"><strong>₹{{ product.price }}</strong></p>
+
+                        <!--whatsapp link-->
+                        <a href="https://wa.me/YOURNUMBERHERE?text=Hello!%20I%20would%20like%20to%20buy%20{{ product.name|urlencode }}%20for%20₹{{ product.price }}.%20Please%20let%20me%20know%20the%20availability."
+                            class="btn product-btn">Buy Now</a>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="no-products">
+                    <i class="fa-solid fa-seedling"></i>
+                    <p>No products found. Please add some!</p>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -97,7 +104,9 @@
             <div class="about-content">
                 <div class="about-text" id="about-text">
                     <h2 class="section-title" id="about-title">About Us</h2>
-                    <p class="about-description" id="about-description">We provide herbal products sourced from nature to support a healthy lifestyle. Our mission is to help you achieve wellness through organic solutions.</p>
+                    <p class="about-description" id="about-description">We provide herbal products sourced from nature
+                        to support a healthy lifestyle. Our mission is to help you achieve wellness through organic
+                        solutions.</p>
                     <div class="about-features">
                         <div class="feature" id="feature-1">
                             <i class="fa-solid fa-leaf"></i>
@@ -125,7 +134,8 @@
         <div class="container">
             <h2 class="section-title" id="contact-title">Contact Us</h2>
             <div class="contact-content">
-                <p class="contact-text" id="contact-text">Have questions or want to place an order? Reach us on WhatsApp.</p>
+                <p class="contact-text" id="contact-text">Have questions or want to place an order? Reach us on
+                    WhatsApp.</p>
                 <a href="https://wa.me/YOURNUMBERHERE" class="btn contact-btn" id="contact-btn">
                     <i class="fa-brands fa-whatsapp"></i>
                     WhatsApp Us
@@ -155,14 +165,14 @@
         // Hamburger menu toggle
         const hamburger = document.getElementById('hamburger');
         const nav = document.getElementById('nav');
-        hamburger.addEventListener('click', function() {
+        hamburger.addEventListener('click', function () {
             hamburger.classList.toggle('active');
             nav.classList.toggle('active');
         });
         // Close nav on link click (mobile)
         document.querySelectorAll('.nav a').forEach(link => {
             link.addEventListener('click', () => {
-                if(window.innerWidth <= 768) {
+                if (window.innerWidth <= 768) {
                     hamburger.classList.remove('active');
                     nav.classList.remove('active');
                 }
@@ -170,4 +180,5 @@
         });
     </script>
 </body>
+
 </html>
