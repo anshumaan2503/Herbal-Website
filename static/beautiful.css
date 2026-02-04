@@ -96,9 +96,9 @@ h3,
 .hero {
     background: linear-gradient(180deg, #1b5e20 0%, #2e7d32 40%, #f6fff6 100%) !important;
     margin-top: 0 !important;
-    /* No gap with header */
-    padding-top: 120px !important;
-    min-height: 90vh !important;
+    padding-top: 100px !important;
+    padding-bottom: 2rem !important;
+    min-height: 50vh !important;
     position: relative;
     display: flex;
     align-items: center;
@@ -253,6 +253,12 @@ h3,
 
     .hero-title {
         font-size: 2.5rem !important;
+    }
+
+    .hero {
+        min-height: auto !important;
+        padding-top: 80px !important;
+        padding-bottom: 1.5rem !important;
     }
 
     .nav {
