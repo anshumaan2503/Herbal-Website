@@ -49,13 +49,30 @@ def utility_processor():
 # ✅ Home page - Show all products
 @app.route('/')
 def home():
-    products = list(products_collection.find())
-    return render_template('index.html', products=products)
+    try:
+        products = list(products_collection.find())
+        return render_template('index.html', products=products)
+    except Exception as e:
+        return f"Database error: {e}"
+
+# Config check route for debugging
+@app.route('/check_config')
+def check_config():
+    if not session.get('admin_logged_in'):
+        return "Please login as admin first to see config."
+    config_status = {
+        "Cloud Name": os.environ.get('CLOUDINARY_CLOUD_NAME', '❌ NOT SET'),
+        "API Key": "✅ SET" if os.environ.get('CLOUDINARY_API_KEY') else "❌ NOT SET",
+        "API Secret": "✅ SET" if os.environ.get('CLOUDINARY_API_SECRET') else "❌ NOT SET",
+        "MongoDB URI": "✅ SET" if os.environ.get('MONGO_URI') else "❌ NOT SET (Using Code Fallback)",
+    }
+    return f"<h3>System Configuration Check</h3><pre>{config_status}</pre><a href='/dashboard'>Back to Dashboard</a>"
 
 # Admin login page
 @app.route('/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
+# ... (rest of the file stays same, just adding these routes)
         username = request.form['username']
         password = request.form['password']
         # Simple hardcoded admin credentials
@@ -98,8 +115,8 @@ def add_product():
                 upload_result = cloudinary.uploader.upload(image)
                 image_url = upload_result['secure_url']
             except Exception as e:
-                # Fallback to local storage if Cloudinary fails/not configured
-                print(f"Cloudinary upload failed: {e}")
+                # Fallback to local storage if Cloudinary fails
+                flash(f'Cloudinary Error: {e}. Image saved locally (non-persistent).', 'danger')
                 image_filename = secure_filename(image.filename)
                 image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
                 image.save(image_path)
