@@ -40,9 +40,10 @@ def urlencode_filter(s):
 def utility_processor():
     def get_image_url(image_path):
         if not image_path:
-            return ""
+            return "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg" # Fallback placeholder
         if image_path.startswith('http'):
             return image_path
+        # If it's a local path, try to serve it, but recognize it might be missing on Render
         return url_for('static', filename='images/' + image_path)
     return dict(get_image_url=get_image_url)
 
@@ -72,7 +73,6 @@ def check_config():
 @app.route('/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-# ... (rest of the file stays same, just adding these routes)
         username = request.form['username']
         password = request.form['password']
         # Simple hardcoded admin credentials
