@@ -7,22 +7,23 @@ Run this script if you have existing data in SQLite that you want to transfer to
 import sqlite3
 from pymongo import MongoClient
 import os
+import certifi
 
 def migrate_sqlite_to_mongodb():
     """Migrate data from SQLite to MongoDB"""
     
     # MongoDB Configuration
-    MONGO_URI = "mongodb://localhost:27017/"
-    DB_NAME = "herbal_products_db"
+    MONGO_URI = "mongodb+srv://admin:Ans%23umaan2003@cluster0.jssosyw.mongodb.net/herbal_website?retryWrites=true&w=majority&appName=Cluster0"
+    DB_NAME = "herbal_website"
     COLLECTION_NAME = "products"
     
-    # SQLite database path
-    SQLITE_DB = "database.db"
+    # SQLite database path - using the correct one from the project
+    SQLITE_DB = "products.db" 
     
     try:
-        # Connect to MongoDB
+        # Connect to MongoDB with SSL certificate fix
         print("🔌 Connecting to MongoDB...")
-        client = MongoClient(MONGO_URI)
+        client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
         client.admin.command('ping')
         db = client[DB_NAME]
         products_collection = db[COLLECTION_NAME]
@@ -30,12 +31,16 @@ def migrate_sqlite_to_mongodb():
         
         # Check if SQLite database exists
         if not os.path.exists(SQLITE_DB):
-            print(f"❌ SQLite database '{SQLITE_DB}' not found.")
-            print("No migration needed - starting fresh with MongoDB!")
-            return
+            # Try alternate path just in case
+            if os.path.exists("database.db"):
+                SQLITE_DB = "database.db"
+            else:
+                print(f"❌ SQLite database '{SQLITE_DB}' not found.")
+                print("No migration needed - starting fresh with MongoDB!")
+                return
         
         # Connect to SQLite
-        print("🔌 Connecting to SQLite...")
+        print(f"🔌 Connecting to SQLite ({SQLITE_DB})...")
         sqlite_conn = sqlite3.connect(SQLITE_DB)
         sqlite_cursor = sqlite_conn.cursor()
         
@@ -87,7 +92,9 @@ def migrate_sqlite_to_mongodb():
         
     except Exception as e:
         print(f"❌ Migration failed: {e}")
-        print("Please make sure MongoDB is running on localhost:27017")
+        print("\nPossible solutions:")
+        print("1. Ensure your IP address is whitelisted in MongoDB Atlas.")
+        print("2. Check your internet connection.")
 
 if __name__ == "__main__":
     print("🚀 Starting SQLite to MongoDB migration...")

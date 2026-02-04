@@ -1,13 +1,32 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-import sqlite3
 import os
 from werkzeug.utils import secure_filename
 from urllib.parse import quote
+from pymongo import MongoClient
+from bson.objectid import ObjectId
+import cloudinary
+import cloudinary.uploader
+from cloudinary.utils import cloudinary_url
+import certifi
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/images'
 app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key')
-app.config['DATABASE'] = 'products.db'
+
+# MongoDB Connection
+MONGO_URI = os.environ.get('MONGO_URI', "mongodb+srv://admin:Ans%23umaan2003@cluster0.jssosyw.mongodb.net/herbal_website?retryWrites=true&w=majority&appName=Cluster0")
+client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
+db = client.get_database('herbal_website')
+
+products_collection = db.products
+
+# Cloudinary Configuration
+cloudinary.config(
+    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME', 'your_cloud_name'),
+    api_key = os.environ.get('CLOUDINARY_API_KEY', 'your_api_key'),
+    api_secret = os.environ.get('CLOUDINARY_API_SECRET', 'your_api_secret'),
+    secure = True
+)
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -16,38 +35,21 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 def urlencode_filter(s):
     return quote(str(s))
 
-# Database helper functions
-def get_db():
-    """Get database connection"""
-    db = sqlite3.connect(app.config['DATABASE'])
-    db.row_factory = sqlite3.Row  # Return rows as dictionaries
-    return db
-
-def init_db():
-    """Initialize the database"""
-    db = get_db()
-    db.execute('''
-        CREATE TABLE IF NOT EXISTS products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            description TEXT NOT NULL,
-            price TEXT NOT NULL,
-            image TEXT NOT NULL
-        )
-    ''')
-    db.commit()
-    db.close()
-    print("✅ SQLite database initialized successfully!")
-
-# Initialize database on startup
-init_db()
+# Custom helper to get image URL (works for both local and cloudinary)
+@app.context_processor
+def utility_processor():
+    def get_image_url(image_path):
+        if not image_path:
+            return ""
+        if image_path.startswith('http'):
+            return image_path
+        return url_for('static', filename='images/' + image_path)
+    return dict(get_image_url=get_image_url)
 
 # ✅ Home page - Show all products
 @app.route('/')
 def home():
-    db = get_db()
-    products = db.execute('SELECT * FROM products').fetchall()
-    db.close()
+    products = list(products_collection.find())
     return render_template('index.html', products=products)
 
 # Admin login page
@@ -75,9 +77,7 @@ def logout():
 def dashboard():
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
-    db = get_db()
-    products = db.execute('SELECT * FROM products').fetchall()
-    db.close()
+    products = list(products_collection.find())
     return render_template('dashboard.html', products=products)
 
 # Protect add-product route
@@ -91,19 +91,28 @@ def add_product():
         price = request.form['price']
         image = request.files['image']
 
+        image_url = ""
         if image and image.filename != '':
-            image_filename = secure_filename(image.filename)
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
-            image.save(image_path)
+            try:
+                # Upload to Cloudinary
+                upload_result = cloudinary.uploader.upload(image)
+                image_url = upload_result['secure_url']
+            except Exception as e:
+                # Fallback to local storage if Cloudinary fails/not configured
+                print(f"Cloudinary upload failed: {e}")
+                image_filename = secure_filename(image.filename)
+                image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
+                image.save(image_path)
+                image_url = image_filename
 
-            # Insert product into SQLite
-            db = get_db()
-            db.execute(
-                'INSERT INTO products (name, description, price, image) VALUES (?, ?, ?, ?)',
-                (name, description, price, image_filename)
-            )
-            db.commit()
-            db.close()
+            # Insert product into MongoDB
+            product_data = {
+                'name': name,
+                'description': description,
+                'price': price,
+                'image': image_url
+            }
+            products_collection.insert_one(product_data)
             flash('Product added successfully!', 'success')
 
         return redirect(url_for('dashboard'))
@@ -111,28 +120,26 @@ def add_product():
     return render_template('add_product.html')
 
 # Protect delete route
-@app.route('/delete/<int:product_id>')
+@app.route('/delete/<string:product_id>')
 def delete_product(product_id):
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
     
     try:
-        db = get_db()
-        # Fetch product to get image filename
-        product = db.execute('SELECT * FROM products WHERE id = ?', (product_id,)).fetchone()
+        # Fetch product
+        product = products_collection.find_one({'_id': ObjectId(product_id)})
         
         if product:
             # Delete from database
-            db.execute('DELETE FROM products WHERE id = ?', (product_id,))
-            db.commit()
+            products_collection.delete_one({'_id': ObjectId(product_id)})
             
-            # Delete image file from disk
-            if product['image']:
-                image_path = os.path.join(app.config['UPLOAD_FOLDER'], product['image'])
+            # Delete local image if it exists
+            image_path_str = product.get('image', '')
+            if image_path_str and not image_path_str.startswith('http'):
+                image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_path_str)
                 if os.path.exists(image_path):
                     os.remove(image_path)
         
-        db.close()
         flash('Product deleted successfully!', 'success')
         
     except Exception as e:
@@ -140,6 +147,7 @@ def delete_product(product_id):
         flash('Error deleting product. Please try again.', 'error')
     
     return redirect(url_for('dashboard'))
+
 
 # Change /admin to redirect to login
 @app.route('/admin')
@@ -149,3 +157,4 @@ def admin():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
+

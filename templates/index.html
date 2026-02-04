@@ -69,10 +69,9 @@
             <div class="product-grid" id="product-grid">
                 {% if products %}
                 {% for product in products %}
-                <div class="product-card" data-product-id="{{ product.id }}">
+                <div class="product-card" data-product-id="{{ product._id }}">
                     <div class="product-image-container">
-                        <img src="{{ url_for('static', filename='images/' + product.image) }}" alt="{{ product.name }}"
-                            class="product-image">
+                        <img src="{{ get_image_url(product.image) }}" alt="{{ product.name }}" class="product-image">
                         <div class="product-overlay">
                             <i class="fa-solid fa-eye"></i>
                         </div>
