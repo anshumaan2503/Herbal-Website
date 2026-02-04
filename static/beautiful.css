@@ -37,10 +37,17 @@ h3,
 
 /* 🌿 Header & Nav - Glassmorphism */
 .header {
-    background: rgba(46, 125, 50, 0.85) !important;
-    backdrop-filter: var(--backdrop);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    background: rgba(27, 94, 32, 0.9) !important; /* Deeper Green for Premium feel */
+    backdrop-filter: blur(15px);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+    padding: 0.8rem 2rem !important;
+    transition: all 0.4s ease;
+}
+
+.header.scrolled {
+    background: rgba(13, 50, 16, 0.95) !important;
+    padding: 0.5rem 2rem !important;
 }
 
 .logo {
@@ -217,14 +224,59 @@ h3,
     border-top: 5px solid var(--accent-gold);
 }
 
-/* 🌿 Mobile Nav Override */
+/* 🌿 Mobile Nav Override - Premium Slide-out */
 @media (max-width: 768px) {
+    .header {
+        padding: 0.7rem 1.2rem !important;
+    }
+
     .nav {
-        background: rgba(255, 255, 255, 0.98) !important;
-        border-left: 5px solid var(--accent-gold);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #f1f8e9 100%) !important;
+        position: fixed !important;
+        top: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        left: auto !important;
+        width: 280px !important;
+        height: 100vh !important;
+        transform: translateX(100%) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 2rem !important;
+        transition: transform 0.4s cubic-bezier(0.77, 0, 0.175, 1) !important;
+        box-shadow: -10px 0 30px rgba(0,0,0,0.1) !important;
+        z-index: 2000 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    .nav.active {
+        transform: translateX(0) !important;
     }
 
     .nav-link {
         color: var(--dark-green) !important;
+        font-size: 1.2rem !important;
+        font-weight: 600 !important;
+        width: 100%;
+        text-align: center;
+        padding: 1rem !important;
+    }
+
+    .nav-link i {
+        margin-right: 10px;
+        color: var(--light-green);
+    }
+
+    .hamburger {
+        z-index: 2100 !important;
+    }
+
+    .hamburger span {
+        background: white !important;
+        width: 28px !important;
+        height: 3px !important;
     }
 }
