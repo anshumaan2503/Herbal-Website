@@ -35,19 +35,33 @@ h3,
     font-family: 'Playfair Display', serif;
 }
 
-/* 🌿 Header & Nav - Glassmorphism */
+/* 🌿 Header & Nav - Minimal & Clean */
 .header {
-    background: rgba(27, 94, 32, 0.9) !important; /* Deeper Green for Premium feel */
-    backdrop-filter: blur(15px);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
-    padding: 0.8rem 2rem !important;
-    transition: all 0.4s ease;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+    padding: 1.5rem 2rem !important;
+    position: absolute !important;
+    /* Float over hero */
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .header.scrolled {
-    background: rgba(13, 50, 16, 0.95) !important;
-    padding: 0.5rem 2rem !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    padding: 0.8rem 2rem !important;
+    position: fixed !important;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05) !important;
+}
+
+.header.scrolled .logo,
+.header.scrolled .nav-link {
+    color: var(--dark-green) !important;
+}
+
+.header.scrolled .hamburger span {
+    background: var(--dark-green) !important;
 }
 
 .logo {
@@ -78,43 +92,50 @@ h3,
     border-radius: 2px;
 }
 
-/* 🌿 Hero Section - Dynamic & Colorful */
+/* 🌿 Hero Section - Lush & Organic */
 .hero {
-    background: linear-gradient(135deg, #2e7d32 0%, #66bb6a 100%);
+    background: linear-gradient(180deg, #1b5e20 0%, #2e7d32 40%, #f6fff6 100%) !important;
+    margin-top: 0 !important;
+    /* No gap with header */
+    padding-top: 120px !important;
+    min-height: 90vh !important;
     position: relative;
-    overflow: hidden;
-}
-
-/* Abstract organic shapes in background */
-.hero::before {
-    content: '';
-    position: absolute;
-    top: -50px;
-    right: -50px;
-    width: 300px;
-    height: 300px;
-    background: radial-gradient(circle, rgba(255, 202, 40, 0.2) 0%, transparent 70%);
-    border-radius: 50%;
-    filter: blur(40px);
-    z-index: 1;
+    display: flex;
+    align-items: center;
 }
 
 .hero-title {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    font-size: 3.5rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -1px;
+    line-height: 1.1 !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.hero-subtitle {
+    font-size: 1.2rem !important;
+    font-weight: 400;
+    max-width: 500px;
+    margin-bottom: 2.5rem !important;
+    opacity: 0.85;
 }
 
 .hero-btn {
-    background: var(--accent-gold) !important;
+    background: white !important;
     color: var(--dark-green) !important;
-    border: none !important;
-    font-weight: 700;
-    box-shadow: 0 4px 15px rgba(255, 179, 0, 0.4) !important;
+    padding: 1.2rem 2.8rem !important;
+    border-radius: 100px !important;
+    font-weight: 600 !important;
+    font-size: 1.1rem !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.3s ease !important;
 }
 
 .hero-btn:hover {
-    background: white !important;
-    color: var(--primary-green) !important;
-    transform: translateY(-3px) scale(1.05);
+    transform: translateY(-5px) !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
+    background: var(--accent-gold) !important;
+    color: white !important;
 }
 
 /* 🌿 Product Cards - Glassy & Pop */
@@ -224,32 +245,32 @@ h3,
     border-top: 5px solid var(--accent-gold);
 }
 
-/* 🌿 Mobile Nav Override - Premium Slide-out */
+/* 🌿 Mobile Nav Override - Elegant Sidebar */
 @media (max-width: 768px) {
     .header {
-        padding: 0.7rem 1.2rem !important;
+        padding: 1rem 1.5rem !important;
+    }
+
+    .hero-title {
+        font-size: 2.5rem !important;
     }
 
     .nav {
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #f1f8e9 100%) !important;
+        background: white !important;
+        padding-top: 5rem !important;
+        width: 300px !important;
         position: fixed !important;
         top: 0 !important;
         right: 0 !important;
         bottom: 0 !important;
-        left: auto !important;
-        width: 280px !important;
-        height: 100vh !important;
         transform: translateX(100%) !important;
         display: flex !important;
         flex-direction: column !important;
-        justify-content: center !important;
         align-items: center !important;
         gap: 2rem !important;
         transition: transform 0.4s cubic-bezier(0.77, 0, 0.175, 1) !important;
-        box-shadow: -10px 0 30px rgba(0,0,0,0.1) !important;
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1) !important;
         z-index: 2000 !important;
-        opacity: 1 !important;
-        visibility: visible !important;
     }
 
     .nav.active {
@@ -260,23 +281,15 @@ h3,
         color: var(--dark-green) !important;
         font-size: 1.2rem !important;
         font-weight: 600 !important;
-        width: 100%;
-        text-align: center;
-        padding: 1rem !important;
-    }
-
-    .nav-link i {
-        margin-right: 10px;
-        color: var(--light-green);
-    }
-
-    .hamburger {
-        z-index: 2100 !important;
     }
 
     .hamburger span {
         background: white !important;
-        width: 28px !important;
-        height: 3px !important;
+        height: 2px !important;
+        width: 25px !important;
+    }
+
+    .header.scrolled .hamburger span {
+        background: var(--dark-green) !important;
     }
 }
