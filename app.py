@@ -119,6 +119,46 @@ def add_product():
 
     return render_template('add_product.html')
 
+@app.route('/edit/<string:product_id>', methods=['GET', 'POST'])
+def edit_product(product_id):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    product = products_collection.find_one({'_id': ObjectId(product_id)})
+    if not product:
+        flash('Product not found!', 'danger')
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form['description']
+        price = request.form['price']
+        image = request.files.get('image')
+
+        update_data = {
+            'name': name,
+            'description': description,
+            'price': price
+        }
+
+        if image and image.filename != '':
+            try:
+                # Upload to Cloudinary
+                upload_result = cloudinary.uploader.upload(image)
+                update_data['image'] = upload_result['secure_url']
+            except Exception as e:
+                print(f"Cloudinary upload failed: {e}")
+                image_filename = secure_filename(image.filename)
+                image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
+                image.save(image_path)
+                update_data['image'] = image_filename
+
+        products_collection.update_one({'_id': ObjectId(product_id)}, {'$set': update_data})
+        flash('Product updated successfully!', 'success')
+        return redirect(url_for('dashboard'))
+
+    return render_template('edit_product.html', product=product)
+
 # Protect delete route
 @app.route('/delete/<string:product_id>')
 def delete_product(product_id):
