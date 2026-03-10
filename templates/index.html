@@ -74,7 +74,8 @@
                 {% for product in products %}
                 <div class="product-card" data-product-id="{{ product._id }}">
                     <div class="product-image-container">
-                        <img src="{{ get_image_url(product.image) }}" alt="{{ product.name }}" class="product-image">
+                        <img src="{{ get_image_url(product.image, width=400) }}" alt="{{ product.name }}"
+                            class="product-image" loading="lazy" width="300" height="300">
                         <div class="product-overlay">
                             <i class="fa-solid fa-eye"></i>
                         </div>

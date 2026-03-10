@@ -38,12 +38,20 @@ def urlencode_filter(s):
 # Custom helper to get image URL (works for both local and cloudinary)
 @app.context_processor
 def utility_processor():
-    def get_image_url(image_path):
+    def get_image_url(image_path, width=None):
         if not image_path:
-            return "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg" # Fallback placeholder
+            # Fallback with optional width
+            transformation = f"f_auto,q_auto{',w_' + str(width) + ',c_scale' if width else ''}"
+            return f"https://res.cloudinary.com/demo/image/upload/{transformation}/sample.jpg"
+        
         if image_path.startswith('http'):
+            # If it's a Cloudinary URL, inject auto-optimization and resizing
+            if 'cloudinary.com' in image_path and '/upload/' in image_path:
+                transformation = f"f_auto,q_auto{',w_' + str(width) + ',c_scale' if width else ''}"
+                return image_path.replace('/upload/', f'/upload/{transformation}/')
             return image_path
-        # If it's a local path, try to serve it, but recognize it might be missing on Render
+            
+        # If it's a local path, try to serve it
         return url_for('static', filename='images/' + image_path)
     return dict(get_image_url=get_image_url)
 
