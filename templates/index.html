@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Herbal Products</title>
+    <title>Oyster Herbals</title>
 
     <!-- CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -25,10 +25,12 @@
 <body>
     <!-- Header -->
     <header class="header" id="header">
-        <div class="logo" id="logo">
-            <i class="fa-solid fa-leaf" style="color:#c8e6c9;margin-right:8px;"></i>
-            Herbal<span>Products</span>
-        </div>
+        <a href="#home" class="logo" id="logo"
+            style="display:flex; align-items:center; gap:10px; text-decoration:none; color:white;">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Oyster Herbals Logo"
+                style="height:60px; width:60px; object-fit:cover; border-radius:50%; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+            Oyster<span>Herbals</span>
+        </a>
         <div class="hamburger" id="hamburger">
             <span></span>
             <span></span>
@@ -46,18 +48,19 @@
     <section id="home" class="hero">
         <div class="hero-content">
             <div class="hero-text" id="hero-text">
-                <h1 class="hero-title" id="hero-title">Natural & Healthy Living</h1>
-                <p class="hero-subtitle" id="hero-subtitle">Discover herbal products that enhance your lifestyle
-                    naturally.</p>
-                <a href="#products" class="btn hero-btn" id="hero-btn">Shop Now</a>
-            </div>
-            <div class="hero-visual" id="hero-visual">
-                <div class="floating-leaves">
-                    <i class="fa-solid fa-leaf leaf-1"></i>
-                    <i class="fa-solid fa-leaf leaf-2"></i>
-                    <i class="fa-solid fa-leaf leaf-3"></i>
-                    <i class="fa-solid fa-seedling leaf-4"></i>
+                <div class="hero-logo-visual" style="margin-bottom: 2rem;">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Oyster Herbals Logo"
+                        style="width: 180px; height: 180px; object-fit: cover; border-radius: 50%; box-shadow: 0 15px 35px rgba(0,0,0,0.3); border: 4px solid rgba(255,255,255,0.1);">
                 </div>
+                <h1 class="hero-title" id="hero-title">Experience the Power <br>of Pure Nature</h1>
+                <p class="hero-subtitle" id="hero-subtitle">Premium organic herbal solutions crafted to nurture your
+                    wellness journey. Sourced from the finest natural ingredients to bring you health without
+                    compromise. Experience the simple, honest power of nature to help you look and feel your best every
+                    single day.</p>
+
+                <a href="#products" class="btn hero-btn" id="hero-btn"
+                    style="background: #ffc107; color: #2e7d32; border: none; font-weight: 700; padding: 1.2rem 2.8rem; font-size: 1.25rem;">Shop
+                    Our Collection</a>
             </div>
         </div>
     </section>
@@ -82,7 +85,7 @@
                         <p class="product-price"><strong>₹{{ product.price }}</strong></p>
 
                         <!--whatsapp link-->
-                        <a href="https://wa.me/YOURNUMBERHERE?text=Hello!%20I%20would%20like%20to%20buy%20{{ product.name|urlencode }}%20for%20₹{{ product.price }}.%20Please%20let%20me%20know%20the%20availability."
+                        <a href="https://wa.me/918305909173?text=Hello!%20I%20would%20like%20to%20buy%20{{ product.name|urlencode }}%20for%20₹{{ product.price }}.%20Please%20let%20me%20know%20the%20availability."
                             class="btn product-btn">Buy Now</a>
                     </div>
                 </div>
@@ -132,41 +135,84 @@
     <section id="contact" class="contact section">
         <div class="container">
             <h2 class="section-title" id="contact-title">Contact Us</h2>
-            <div class="contact-content">
-                <p class="contact-text" id="contact-text">Have questions or want to place an order? Reach us on
-                    WhatsApp.</p>
-                <a href="https://wa.me/YOURNUMBERHERE" class="btn contact-btn" id="contact-btn">
-                    <i class="fa-brands fa-whatsapp"></i>
-                    WhatsApp Us
-                </a>
+            <div class="contact-content" id="contact-grid"
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 860px; margin: 0 auto; text-align: left;">
 
-                <!-- Security Disclaimer -->
-                <div
-                    style="margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border-left: 5px solid #f39c12; border-radius: 10px; box-shadow: 0 4px 15px rgba(243, 156, 18, 0.15);">
+                <!-- LEFT: Clinic Address -->
+                <div id="clinic-address"
+                    style="padding: 1.5rem; background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border-left: 5px solid #4caf50; border-radius: 12px; box-shadow: 0 4px 20px rgba(76,175,80,0.13);">
                     <h4
-                        style="color: #d68910; margin: 0 0 0.75rem 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="fa-solid fa-shield-halved"></i>
-                        <strong>Important Privacy Notice</strong>
+                        style="color: #2e7d32; margin: 0 0 0.75rem 0; font-size: 1.05rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <strong>Our Clinic Address</strong>
                     </h4>
-                    <p style="color: #5d4d2e; margin: 0; line-height: 1.6; font-size: 0.95rem;">
-                        <strong>⚠️ WhatsApp Contact Temporarily Disabled:</strong> For your security and privacy
-                        protection,
-                        the WhatsApp contact feature is currently not connected to an active number. This is a
-                        <strong>demonstration website</strong> showcasing our herbal products catalog. Contact
-                        information
-                        has been intentionally removed to prevent unauthorized access and protect both customer and
-                        business
-                        data. For genuine inquiries, please contact the website administrator directly.
-                    </p>
+                    <address style="color: #3b5a3d; font-style: normal; line-height: 1.9; font-size: 0.95rem;">
+                        H. No. 3/53, Gulmarg Colony<br>
+                        Near CMO Office<br>
+                        Girls College Road<br>
+                        Lal Diggi, Aligarh (UP), India<br>
+                        <strong>PIN – 202002</strong>
+                    </address>
                 </div>
+
+                <!-- RIGHT: Contact Methods -->
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+
+                    <!-- WhatsApp -->
+                    <a href="https://wa.me/918305909173" id="contact-btn"
+                        style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: linear-gradient(135deg, #dcf8c6 0%, #e8f5e9 100%); border-left: 5px solid #25d366; border-radius: 12px; box-shadow: 0 4px 15px rgba(37,211,102,0.15); text-decoration: none; color: #1a5e2a; transition: transform 0.2s, box-shadow 0.2s;"
+                        onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(37,211,102,0.25)'"
+                        onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(37,211,102,0.15)'">
+                        <i class="fa-brands fa-whatsapp" style="font-size:1.5rem; color:#25d366;"></i>
+                        <div>
+                            <div style="font-size:0.78rem; color:#555; margin-bottom:2px;">Chat with us</div>
+                            <div style="font-weight:700; font-size:1rem;">WhatsApp Us</div>
+                        </div>
+                    </a>
+
+                    <!-- General Email -->
+                    <a href="mailto:info@oysterherbals.in" id="email-info"
+                        style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border-left: 5px solid #4caf50; border-radius: 12px; box-shadow: 0 4px 15px rgba(76,175,80,0.12); text-decoration: none; color: #2e7d32; transition: transform 0.2s, box-shadow 0.2s;"
+                        onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(76,175,80,0.2)'"
+                        onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(76,175,80,0.12)'">
+                        <i class="fa-solid fa-envelope" style="font-size:1.4rem; color:#4caf50;"></i>
+                        <div>
+                            <div style="font-size:0.78rem; color:#555; margin-bottom:2px;">E-Mail</div>
+                            <div style="font-weight:600; font-size:0.92rem;">info@oysterherbals.in</div>
+                        </div>
+                    </a>
+
+                    <!-- Customer Care Email -->
+                    <a href="mailto:customercare@oysterherbals.in" id="email-customercare"
+                        style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: linear-gradient(135deg, #e3f2fd 0%, #e8f4fb 100%); border-left: 5px solid #2196f3; border-radius: 12px; box-shadow: 0 4px 15px rgba(33,150,243,0.12); text-decoration: none; color: #1565c0; transition: transform 0.2s, box-shadow 0.2s;"
+                        onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(33,150,243,0.2)'"
+                        onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(33,150,243,0.12)'">
+                        <i class="fa-solid fa-headset" style="font-size:1.4rem; color:#2196f3;"></i>
+                        <div>
+                            <div style="font-size:0.78rem; color:#555; margin-bottom:2px;">Customer Care</div>
+                            <div style="font-weight:600; font-size:0.92rem;">customercare@oysterherbals.in</div>
+                        </div>
+                    </a>
+
+                </div>
+
             </div>
+
+            <style>
+                @media (max-width: 640px) {
+                    #contact-grid {
+                        grid-template-columns: 1fr !important;
+                    }
+                }
+            </style>
+
         </div>
     </section>
 
     <!-- Footer -->
     <footer class="footer" id="footer">
         <div class="container">
-            <p>&copy; 2025 Herbal Products. All Rights Reserved.</p>
+            <p>&copy; 2026 Oyster Herbals. All Rights Reserved.</p>
         </div>
     </footer>
 
@@ -174,7 +220,7 @@
     <div class="loading-screen" id="loading-screen">
         <div class="loading-content">
             <i class="fa-solid fa-leaf loading-icon"></i>
-            <p>Loading Herbal Products...</p>
+            <p>Loading Oyster Herbals...</p>
         </div>
     </div>
 
