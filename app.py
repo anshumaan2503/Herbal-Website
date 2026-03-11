@@ -8,6 +8,8 @@ import cloudinary
 import cloudinary.uploader
 from cloudinary.utils import cloudinary_url
 import certifi
+import hashlib
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/images'
@@ -19,6 +21,8 @@ client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
 db = client.get_database('herbal_website')
 
 products_collection = db.products
+users_collection    = db.users
+reviews_collection  = db.reviews
 
 # Cloudinary Configuration
 cloudinary.config(
@@ -60,7 +64,13 @@ def utility_processor():
 def home():
     try:
         products = list(products_collection.find())
-        return render_template('index.html', products=products)
+        # Group reviews by product_id for template use
+        all_reviews = list(reviews_collection.find())
+        reviews_by_product = {}
+        for r in all_reviews:
+            pid = r['product_id']
+            reviews_by_product.setdefault(pid, []).append(r)
+        return render_template('index.html', products=products, reviews_by_product=reviews_by_product)
     except Exception as e:
         return f"Database error: {e}"
 
@@ -218,6 +228,140 @@ def delete_product(product_id):
 @app.route('/admin')
 def admin():
     return redirect(url_for('admin_login'))
+
+
+# ─── User Registration ────────────────────────────────────────────────────────
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def user_register():
+    if session.get('user_logged_in'):
+        return redirect(url_for('home'))
+    if request.method == 'POST':
+        name     = request.form.get('name', '').strip()
+        email    = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+
+        if not name or not email or not password:
+            flash('All fields are required.', 'danger')
+            return render_template('user_register.html')
+
+        if len(password) < 6:
+            flash('Password must be at least 6 characters.', 'danger')
+            return render_template('user_register.html')
+
+        if users_collection.find_one({'email': email}):
+            flash('An account with this email already exists.', 'danger')
+            return render_template('user_register.html')
+
+        users_collection.insert_one({
+            'name'    : name,
+            'email'   : email,
+            'password': hash_password(password),
+            'created' : datetime.utcnow()
+        })
+        flash('Account created! Please log in.', 'success')
+        return redirect(url_for('user_login'))
+
+    return render_template('user_register.html')
+
+
+@app.route('/user-login', methods=['GET', 'POST'])
+def user_login():
+    if session.get('user_logged_in'):
+        return redirect(url_for('home'))
+    if request.method == 'POST':
+        email    = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+
+        user = users_collection.find_one({'email': email, 'password': hash_password(password)})
+        if user:
+            session['user_logged_in'] = True
+            session['user_name']      = user['name']
+            session['user_id']        = str(user['_id'])
+            flash(f"Welcome back, {user['name']}!", 'success')
+            return redirect(url_for('home'))
+        else:
+            flash('Invalid email or password.', 'danger')
+
+    return render_template('user_login.html')
+
+
+@app.route('/user-logout')
+def user_logout():
+    session.pop('user_logged_in', None)
+    session.pop('user_name', None)
+    session.pop('user_id', None)
+    flash('You have been logged out.', 'success')
+    return redirect(url_for('home'))
+
+
+# ─── Reviews ──────────────────────────────────────────────────────────────────
+
+@app.route('/review/<string:product_id>', methods=['POST'])
+def submit_review(product_id):
+    if not session.get('user_logged_in'):
+        flash('Please log in to submit a review.', 'danger')
+        return redirect(url_for('user_login'))
+
+    rating  = request.form.get('rating', '5')
+    comment = request.form.get('comment', '').strip()
+
+    if not comment:
+        flash('Review comment cannot be empty.', 'danger')
+        return redirect(url_for('home') + f'#product-{product_id}')
+
+    try:
+        rating = int(rating)
+        if rating < 1 or rating > 5:
+            rating = 5
+    except ValueError:
+        rating = 5
+
+    # Check if user already reviewed this product
+    existing = reviews_collection.find_one({
+        'product_id': product_id,
+        'user_id'   : session['user_id']
+    })
+    if existing:
+        flash('You have already reviewed this product.', 'danger')
+        return redirect(url_for('home') + f'#product-{product_id}')
+
+    reviews_collection.insert_one({
+        'product_id': product_id,
+        'user_id'   : session['user_id'],
+        'user_name' : session['user_name'],
+        'rating'    : rating,
+        'comment'   : comment,
+        'date'      : datetime.utcnow()
+    })
+    flash('Thank you for your review!', 'success')
+    return redirect(url_for('home') + f'#rmodal-{product_id}')
+
+
+@app.route('/review/delete/<string:review_id>', methods=['POST'])
+def delete_review(review_id):
+    if not session.get('user_logged_in'):
+        flash('Please log in first.', 'danger')
+        return redirect(url_for('user_login'))
+
+    try:
+        review = reviews_collection.find_one({'_id': ObjectId(review_id)})
+        if not review:
+            flash('Review not found.', 'danger')
+        elif review['user_id'] != session['user_id']:
+            flash('You can only delete your own review.', 'danger')
+        else:
+            reviews_collection.delete_one({'_id': ObjectId(review_id)})
+            flash('Your review has been deleted.', 'success')
+    except Exception as e:
+        flash('Error deleting review. Please try again.', 'danger')
+
+    return redirect(url_for('home'))
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

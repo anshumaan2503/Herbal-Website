@@ -23,6 +23,22 @@
 </head>
 
 <body>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div id="flash-container" style="position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:9999;width:auto;max-width:480px;">
+        {% for category, message in messages %}
+        <div style="display:flex;align-items:center;gap:.6rem;padding:.8rem 1.2rem;margin-bottom:.5rem;border-radius:12px;background:{{ '#e8f5e9' if category == 'success' else '#fdecea' }};border-left:4px solid {{ '#43a047' if category == 'success' else '#e53935' }};color:{{ '#2e7d32' if category == 'success' else '#c62828' }};box-shadow:0 4px 20px rgba(0,0,0,.15);font-family:'Poppins',sans-serif;font-size:.88rem;">
+            <i class="fa-solid fa-{{ 'circle-check' if category == 'success' else 'circle-exclamation' }}"></i>
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    <script>setTimeout(()=>{var f=document.getElementById('flash-container');if(f)f.style.display='none';},4000);</script>
+    {% endif %}
+    {% endwith %}
+
     <!-- Header -->
     <header class="header" id="header">
         <a href="#home" class="logo" id="logo"
@@ -41,6 +57,12 @@
             <a href="#products" class="nav-link"><i class="fa-solid fa-seedling"></i> Products</a>
             <a href="#about" class="nav-link"><i class="fa-solid fa-circle-info"></i> About</a>
             <a href="#contact" class="nav-link"><i class="fa-brands fa-whatsapp"></i> Contact</a>
+            {% if session.get('user_logged_in') %}
+            <a href="{{ url_for('user_logout') }}" class="nav-link" style="color:#ffc107;"><i class="fa-solid fa-right-from-bracket"></i> Logout ({{ session.user_name }})</a>
+            {% else %}
+            <a href="{{ url_for('user_login') }}" class="nav-link" style="color:#ffc107;"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
+            <a href="{{ url_for('user_register') }}" class="nav-link" style="color:#b2ff59;"><i class="fa-solid fa-user-plus"></i> Register</a>
+            {% endif %}
         </nav>
     </header>
 
@@ -80,13 +102,99 @@
                     <div class="product-info">
                         <h3 class="product-name">{{ product.name }}</h3>
                         <p class="product-description">{{ product.description }}</p>
-                        <p class="product-price"><strong>₹{{ product.price }}</strong></p>
+                        <p class="product-price"><strong>&#8377;{{ product.price }}</strong></p>
 
                         <!--whatsapp link-->
-                        <a href="https://wa.me/919450791658?text=Hello!%20I%20would%20like%20to%20buy%20{{ product.name|urlencode }}%20for%20₹{{ product.price }}.%20Please%20let%20me%20know%20the%20availability."
+                        <a href="https://wa.me/919450791658?text=Hello!%20I%20would%20like%20to%20buy%20{{ product.name|urlencode }}%20for%20&#8377;{{ product.price }}.%20Please%20let%20me%20know%20the%20availability."
                             class="btn product-btn">Buy Now</a>
+
+                        <!-- Reviews toggle button -->
+                        {% set pid = product._id|string %}
+                        {% set prod_reviews = reviews_by_product.get(pid, []) %}
+                        <button class="review-toggle-btn" onclick="openModal('rmodal-{{ pid }}')" type="button">
+                            <i class="fa-solid fa-star"></i>
+                            Check Reviews
+                        </button>
                     </div>
                 </div>
+
+                <!-- ═══ Review Modal for this product ═══ -->
+                {% set ar = namespace(found=false, rid='') %}
+                {% for rev in prod_reviews %}
+                    {% if rev.user_id == session.get('user_id') %}
+                        {% set ar.found = true %}
+                        {% set ar.rid = rev._id|string %}
+                    {% endif %}
+                {% endfor %}
+
+                <div class="rmodal-backdrop" id="rmodal-{{ pid }}" onclick="closeIfBack(event,this)">
+                    <div class="rmodal-box">
+
+                        <div class="rmodal-head">
+                            <div>
+                                <div class="rmodal-name">{{ product.name }}</div>
+                                <div class="rmodal-cnt">{{ prod_reviews|length }} review{{ 's' if prod_reviews|length != 1 else '' }}</div>
+                            </div>
+                            <button class="rmodal-x" onclick="closeModal('rmodal-{{ pid }}')">&times;</button>
+                        </div>
+
+                        <div class="rmodal-list">
+                            {% if prod_reviews %}
+                                {% for rev in prod_reviews %}
+                                <div class="rv-card">
+                                    <div class="rv-row-top">
+                                        <div>
+                                            <span class="rv-author">{{ rev.user_name }}</span>
+                                            <span class="rv-stars">{% for i in range(rev.rating) %}&#9733;{% endfor %}{% for i in range(5 - rev.rating) %}&#9734;{% endfor %}</span>
+                                        </div>
+                                        {% if session.get('user_logged_in') and rev.user_id == session.get('user_id') %}
+                                        <form method="POST" action="{{ url_for('delete_review', review_id=rev._id|string) }}" style="margin:0;" onsubmit="return confirm('Delete your review?')">
+                                            <button class="rv-del" type="submit" title="Delete my review"><i class="fa-solid fa-trash-can"></i></button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                    <p class="rv-text">{{ rev.comment }}</p>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                            <p class="rv-none"><i class="fa-regular fa-face-meh"></i> No reviews yet — be the first!</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="rmodal-foot">
+                            {% if session.get('user_logged_in') %}
+                                {% if ar.found %}
+                                <p class="rv-done"><i class="fa-solid fa-circle-check"></i> You've already reviewed this. Delete it above to re-review.</p>
+                                {% else %}
+                                <form method="POST" action="{{ url_for('submit_review', product_id=pid) }}" class="rv-form">
+                                    <p class="rv-add-title"><i class="fa-solid fa-pen-to-square"></i> Add a Review</p>
+                                    <div class="rv-label">Your Rating</div>
+                                    <input type="hidden" name="rating" id="rt-{{ pid }}" value="5">
+                                    <div class="sstar-wrap" id="ss-{{ pid }}">
+                                        {% for sv in [1,2,3,4,5] %}
+                                        <span class="sstar {{ 'active' if sv <= 5 else '' }}" data-v="{{ sv }}" onclick="setStar('{{ pid }}',{{ sv }})">&#9733;</span>
+                                        {% endfor %}
+                                    </div>
+                                    <textarea name="comment" rows="3" required placeholder="Share your experience with this product..." class="rv-ta"></textarea>
+                                    <button type="submit" class="rv-sub"><i class="fa-solid fa-paper-plane"></i> Submit Review</button>
+                                </form>
+                                {% endif %}
+                            {% else %}
+                            <div class="rv-gate">
+                                <i class="fa-solid fa-lock rv-gate-icon"></i>
+                                <p>You must be logged in to write a review.</p>
+                                <div class="rv-gate-btns">
+                                    <a href="{{ url_for('user_login') }}" class="rv-gate-btn">Log In</a>
+                                    <a href="{{ url_for('user_register') }}" class="rv-gate-btn rv-gate-reg">Register</a>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                </div>
+                <!-- ═══ /Review Modal ═══ -->
+
                 {% endfor %}
                 {% else %}
                 <div class="no-products">
@@ -97,6 +205,141 @@
             </div>
         </div>
     </section>
+
+    <style>
+        /* Reviews button on each card */
+        .review-toggle-btn {
+            display: flex; align-items: center; gap: .45rem;
+            width: 100%; margin-top: .55rem;
+            padding: .48rem 1rem;
+            background: linear-gradient(135deg,#fff8e1,#fffde7);
+            border: 1.5px solid #ffc107;
+            border-radius: 10px;
+            color: #e65100; font-size: .82rem; font-weight: 600;
+            font-family: 'Poppins', sans-serif; cursor: pointer;
+            transition: background .18s, transform .15s;
+        }
+        .review-toggle-btn:hover { background: linear-gradient(135deg,#fff3cd,#fff8e1); transform: translateY(-1px); }
+        .rev-badge {
+            background: #ffc107; color: #5d4037;
+            border-radius: 20px; padding: .05rem .45rem;
+            font-size: .73rem; font-weight: 700;
+        }
+
+        /* Backdrop */
+        .rmodal-backdrop {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+            z-index: 9100; align-items: center; justify-content: center; padding: 1rem;
+        }
+        .rmodal-backdrop.open { display: flex; }
+
+        /* Modal box */
+        .rmodal-box {
+            background: #fff; border-radius: 20px;
+            width: 100%; max-width: 480px; max-height: 88vh;
+            display: flex; flex-direction: column;
+            box-shadow: 0 24px 60px rgba(0,0,0,.28);
+            overflow: hidden;
+            animation: rmIn .22s ease;
+        }
+        @keyframes rmIn {
+            from { opacity:0; transform: translateY(28px) scale(.96); }
+            to   { opacity:1; transform: translateY(0) scale(1); }
+        }
+
+        /* Header */
+        .rmodal-head {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            padding: 1.1rem 1.4rem 1rem;
+            background: linear-gradient(135deg,#2e7d32,#4caf50); color:#fff; flex-shrink:0;
+        }
+        .rmodal-name { font-size:.98rem; font-weight:700; }
+        .rmodal-cnt  { font-size:.76rem; opacity:.82; margin-top:.1rem; }
+        .rmodal-x {
+            background: rgba(255,255,255,.2); border:none; color:#fff;
+            width:30px; height:30px; border-radius:50%; font-size:1.1rem;
+            cursor:pointer; display:flex; align-items:center; justify-content:center;
+            line-height:1; transition:background .18s;
+        }
+        .rmodal-x:hover { background:rgba(255,255,255,.35); }
+
+        /* Review list */
+        .rmodal-list { padding: .9rem 1.4rem; overflow-y: auto; flex: 1; }
+        .rv-card { background:#f8fdf8; border:1px solid #e0f2e0; border-radius:10px; padding:.6rem .85rem; margin-bottom:.45rem; }
+        .rv-row-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:.2rem; }
+        .rv-author { font-size:.82rem; font-weight:700; color:#2e7d32; margin-right:.4rem; }
+        .rv-stars  { font-size:.88rem; color:#ffc107; letter-spacing:.08em; }
+        .rv-text   { font-size:.81rem; color:#444; margin:0; }
+        .rv-none   { text-align:center; color:#bbb; font-size:.84rem; padding:.8rem 0; }
+        .rv-del {
+            background:none; border:1.5px solid #e53935; color:#e53935;
+            border-radius:7px; padding:.2rem .42rem; font-size:.72rem;
+            cursor:pointer; transition:background .18s,color .18s;
+        }
+        .rv-del:hover { background:#e53935; color:#fff; }
+
+        /* Form footer */
+        .rmodal-foot { border-top:1px solid #eee; padding:.9rem 1.4rem 1.2rem; flex-shrink:0; }
+        .rv-add-title {
+            font-size:.88rem; font-weight:700; color:#2e7d32;
+            margin:0 0 .6rem; display:flex; align-items:center; gap:.4rem;
+        }
+        .rv-label { font-size:.78rem; font-weight:600; color:#555; margin-bottom:.3rem; }
+
+        /* Star selector — left to right */
+        .sstar-wrap { display:flex; gap:.1rem; margin-bottom:.5rem; }
+        .sstar { font-size:1.5rem; cursor:pointer; color:#ccc; transition:color .12s; user-select:none; }
+        .sstar.active { color:#ffc107; }
+
+        .rv-ta {
+            width:100%; padding:.5rem .7rem; margin-bottom:.45rem;
+            border:1.5px solid #ddd; border-radius:10px;
+            font-size:.82rem; font-family:'Poppins',sans-serif;
+            resize:none; outline:none;
+            transition:border-color .2s, box-shadow .2s;
+        }
+        .rv-ta:focus { border-color:#4caf50; box-shadow:0 0 0 3px rgba(76,175,80,.12); }
+        .rv-sub {
+            width:100%; padding:.55rem;
+            background:linear-gradient(135deg,#2e7d32,#4caf50); color:#fff;
+            border:none; border-radius:10px; font-size:.85rem; font-weight:700;
+            font-family:'Poppins',sans-serif; cursor:pointer;
+            transition:opacity .18s, transform .15s;
+        }
+        .rv-sub:hover { opacity:.9; transform:translateY(-1px); }
+        .rv-done { font-size:.8rem; color:#888; margin:0; }
+        .rv-gate { text-align:center; padding:.3rem 0; }
+        .rv-gate-icon { font-size:1.6rem; color:#ccc; display:block; margin-bottom:.4rem; }
+        .rv-gate p    { font-size:.83rem; color:#666; margin-bottom:.55rem; }
+        .rv-gate-btns { display:flex; justify-content:center; gap:.5rem; }
+        .rv-gate-btn {
+            display:inline-block; padding:.4rem 1.1rem;
+            background:linear-gradient(135deg,#2e7d32,#4caf50); color:#fff;
+            border-radius:8px; text-decoration:none; font-size:.8rem; font-weight:600;
+            transition:opacity .18s;
+        }
+        .rv-gate-btn:hover { opacity:.87; }
+        .rv-gate-reg { background:linear-gradient(135deg,#1565c0,#1976d2) !important; }
+    </style>
+
+    <script>
+        function openModal(id)  { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
+        function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+        function closeIfBack(e, el) { if(e.target===el) closeModal(el.id); }
+        document.addEventListener('keydown', e => {
+            if(e.key==='Escape')
+                document.querySelectorAll('.rmodal-backdrop.open').forEach(m=>closeModal(m.id));
+        });
+        function setStar(pid, val) {
+            document.getElementById('rt-'+pid).value = val;
+            document.querySelectorAll('#ss-'+pid+' .sstar').forEach(s=>{
+                s.classList.toggle('active', parseInt(s.dataset.v) <= val);
+            });
+        }
+    </script>
+
+
 
     <!-- About Section -->
     <section id="about" class="about section">
